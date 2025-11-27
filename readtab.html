@@ -713,7 +713,7 @@ function drawSVG(fingering) {
 window.onload = function() {
     // 1. 抓取網址參數
     const params = new URLSearchParams(window.location.search);
-    const txtName = params.get('txtfile'); // 取得 ?txtfile=後面的字串
+    const txtName = params.get('tab'); // 取得 ?tab=後面的字串
 
     if (txtName) {
         // 2. 如果有參數，解析檔名 (格式：曲名_演唱者)

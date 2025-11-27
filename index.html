@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烏克麗麗 樂譜資料庫</title>
+    <title>烏克麗麗 彈唱曲譜資料庫</title>
     <script src="list.js"></script> 
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f6f7; color: #333; margin: 0; padding: 20px; }
@@ -43,7 +43,7 @@
 <body>
 
 <div class="container">
-    <h1>🎸 烏克麗麗 樂譜資料庫</h1>
+    <h1>🎸 烏克麗麗 彈唱曲譜資料庫</h1>
     
     <div class="filter-bar" id="filter-bar">
         <div class="tab-group">
@@ -167,7 +167,7 @@ function render() {
                     
                     // [修改重點] 這裡更改了連結格式
                     // 將原本的 song.fileName 改為 readtab.html?txtfile=檔名(不含html)
-                    link.href = `readtab.html?txtfile=${song.rawName}`; 
+                    link.href = `readtab.html?tab=${song.rawName}`; 
                     
                     link.target = "_blank"; 
 
