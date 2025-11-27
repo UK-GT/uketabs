@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Uke Tab (UG Style)</title>
+    <style>
+        /* --- 1. 基礎設定 --- */
+:root {
+            --primary: #ffc107;
+            --text: #222;
+            --bg: #fff;
+            --chord: #e03e2e;
+            --chord-hover: #ff0000;
+            --highlight: rgba(255, 193, 7, 0.3);
+            
+            /* ▼▼▼ 修改這裡：加入嚴格對齊的中文字型 ▼▼▼ */
+            /* PMingLiU (細明體) 和 MS Gothic 是 Windows 上對齊最準的字體 */
+            /* Menlo/Monaco 是 Mac 的等寬字體 */
+            --font-mono: "Menlo", "Monaco", "Consolas", "Courier New", "PMingLiU", "MingLiU", "MS Gothic", monospace; 
+        }
+       body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 120px; /* 預留捲動面板空間 */
+        }
+
+        .container { max-width: 980px; margin: 0 auto; }
+
+        /* --- 2. 標題與資訊 --- */
+        .header { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .song-title { font-size: 26px; font-weight: 800; margin: 0 0 5px 0; color: #333; }
+        .song-artist { font-size: 16px; color: #555; }
+        .song-meta { font-size: 13px; color: #999; margin-top: 5px; font-family: var(--font-mono); }
+
+        /* --- 3. 控制面板 --- */
+        .controls {
+            background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 20px;
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        }
+        
+        .btn {
+            background: #fff; border: 1px solid #ccc; color: #333;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer;
+            font-size: 14px; font-weight: 600; white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn:hover { background: #eee; }
+        .btn-primary { background: #222; color: #fff; border-color: #222; }
+        .btn-primary:hover { background: #444; }
+        .btn-active { background: var(--primary); border-color: var(--primary); color: #000; }
+
+        /* 轉調器 */
+        .transpose-box {
+            display: flex; align-items: center; background: #fff;
+            border: 1px solid #ccc; border-radius: 4px; overflow: hidden;
+        }
+        .trans-btn { border: none; background: none; padding: 6px 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .trans-btn:hover { background: #eee; }
+        .trans-val { min-width: 30px; text-align: center; font-weight: bold; font-family: var(--font-mono); }
+
+        /* --- 4. 編輯區 (預設隱藏) --- */
+        #editor-layer { display: none; background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 10px; display: flex; gap: 10px; }
+        .input-text { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        textarea#source-input {
+            width: 100%; height: 300px; padding: 10px;
+            font-family: var(--font-mono); font-size: 14px; line-height: 1.5;
+            border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+            white-space: pre; overflow: auto;
+        }
+
+        /* --- 5. 樂譜顯示區 (核心) --- */
+        #tab-view {
+            font-family: var(--font-mono);
+            font-size: 15px; /* 純文字標準大小 */
+            line-height: 1.5; /* 標準行高 */
+            white-space: pre; /* 關鍵：保留所有空白與換行 */
+            overflow-x: auto;
+            color: #333;
+            background: #fff;
+        }
+
+        /* 識別到的和弦 */
+/* 識別到的和弦 */
+.chord {
+    color: var(--chord);
+    font-weight: normal; /* 改回正常粗細，避免變寬 */
+    font-weight: 500;    /* 或是稍微加一點點重，但不要用到 bold (700) */
+    cursor: pointer;
+    display: inline-block;
+}
+      .chord:hover { color: var(--chord-hover); text-decoration: underline; }
+        /* 標記當前選中的和弦 */
+        .chord.active { background-color: var(--primary); color: #000; border-radius: 2px; }
+
+        /* --- 6. 底部和弦圖鑑 (Fixed Bottom Style) --- */
+        #chord-gallery-container {
+            margin-top: 50px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+        .gallery-header { font-weight: bold; margin-bottom: 15px; color: #555; }
+        .gallery-grid {
+            display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start;
+        }
+        .chord-card {
+            border: 1px solid #eee; border-radius: 6px; padding: 10px;
+            text-align: center; width: 100px; background: #fff;
+            transition: transform 0.2s;
+        }
+        .chord-card:hover { border-color: #ccc; }
+        .chord-card.highlight { border: 2px solid var(--primary); background: #fffbe6; }
+        
+        .card-name { font-weight: 800; color: var(--chord); margin-bottom: 5px; font-family: var(--font-mono); }
+        .card-nav { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 5px; cursor: pointer; user-select: none; }
+        .card-nav span:hover { color: #000; }
+
+        /* --- 7. SVG 繪圖 --- */
+        .uke-svg { display: block; margin: 0 auto; }
+        .uke-nut { stroke: #444; stroke-width: 3; }
+        .uke-string, .uke-fret { stroke: #444; stroke-width: 1; }
+        .uke-dot { fill: var(--chord); }
+        .uke-open { fill: none; stroke: #444; stroke-width: 1.5; }
+        .uke-muted { stroke: #444; stroke-width: 1.5; }
+        .uke-finger { font-size: 9px; fill: #fff; font-family: sans-serif; text-anchor: middle; dominant-baseline: middle; }
+
+        /* --- 8. 捲動控制 (Float) --- */
+        .scroll-ui {
+            position: fixed; bottom: 20px; right: 20px;
+            background: rgba(0,0,0,0.85); color: #fff;
+            padding: 8px 15px; border-radius: 30px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .scroll-btn { background: var(--primary); border:none; width:32px; height:32px; border-radius:50%; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; color: #000; }
+        .scroll-val { font-family: var(--font-mono); font-weight:bold; width:20px; text-align:center; font-size:14px;}
+
+        /* --- 9. 列印優化 --- */
+        @media print {
+            .controls, #editor-layer, .scroll-ui, .btn { display: none !important; }
+            body { padding: 0; background: #fff; }
+            .container { max-width: 100%; margin: 0; }
+            #tab-view { font-size: 12pt; line-height: 1.3; white-space: pre-wrap; overflow: visible; }
+            #chord-gallery-container { page-break-inside: avoid; }
+            .chord-card { break-inside: avoid; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 class="song-title" id="disp-title"></h1>
+        <div class="song-artist" id="disp-artist"></div>
+        <div class="song-meta">Key: <span id="disp-key"></span></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="app.toggleEdit()">📝 編輯樂譜</button>
+        
+    <div class="transpose-box">
+        <button class="trans-btn" onclick="app.transpose(-1)">−</button>
+        <span class="trans-val" id="trans-val">0</span>
+        <button class="trans-btn" onclick="app.transpose(1)">+</button>
+    </div>
+
+    <label class="btn" style="cursor:pointer; user-select:none;">
+        <input type="checkbox" id="chk-flats" onchange="app.setFlats(this.checked)" style="margin-right:5px;" checked>
+        ♭ 用降記號
+    </label>        
+
+        <button class="btn" onclick="app.downloadTxt()">⬇️ 下載TXT</button>
+        <button class="btn" onclick="app.exportHtml()">💾 存網頁</button>
+        <button class="btn" onclick="window.print()">🖨️ 列印 / PDF</button>
+    </div>
+
+    <div id="editor-layer">
+        <div class="input-group">
+            <input type="text" id="input-title" class="input-text" placeholder="曲名">
+            <input type="text" id="input-artist" class="input-text" placeholder="歌手">
+        </div>
+        <textarea id="source-input" spellcheck="false" placeholder="請貼上純文字譜..."></textarea>
+        <div style="text-align:right; margin-top:10px;">
+            <button class="btn" onclick="app.toggleEdit()">取消</button>
+            <button class="btn btn-primary" onclick="app.saveEdit()">✅ 更新樂譜</button>
+        </div>
+    </div>
+
+    <div id="tab-view"></div>
+
+    <div id="chord-gallery-container">
+        <div class="gallery-header">和弦圖鑑 (點擊上方和弦可定位)</div>
+        <div id="chord-gallery" class="gallery-grid"></div>
+    </div>
+</div>
+
+<div class="scroll-ui" id="scroll-ui">
+    <button class="scroll-btn" id="scroll-toggle" onclick="app.toggleScroll()">▶</button>
+    <span style="font-size:12px">SPD</span>
+    <input type="range" min="1" max="20" value="3" style="width:60px" oninput="app.setSpeed(this.value)">
+    <span class="scroll-val" id="scroll-val">3</span>
+</div>
+
+<script id="core-logic">
+var app = (function() {
+    // --- 1. 完整和弦資料庫 (維持不變，為了節省版面省略部分，請保留您原本的資料庫) ---
+const chordDatabase = {
+        // --- C Family ---
+        "C":     [[0,0,0,3], [5,4,3,3], [9,7,8,7]],
+        "Cm":    [[0,3,3,3], [5,3,3,3], [8,7,8,6]],
+        "C7":    [[0,0,0,1], [3,4,3,3], [5,7,6,7]],
+        "Cm7":   [[3,3,3,3], [5,7,6,6]], 
+        "Cmaj7": [[0,0,0,2], [5,4,3,3]],
+        "C6":    [[0,0,0,0], [2,0,0,3]], 
+        "Cm6":   [[2,3,3,3], [5,3,5,3]],
+        "C9":    [[0,2,0,1], [3,2,0,1]],
+        "Cadd9": [[0,2,0,3], [0,0,0,5]],
+        "Csus4": [[0,0,1,3], [5,5,3,3]],
+        "Cdim":  [[2,3,2,3]], // dim7 shape mostly used
+        "Cdim7": [[2,3,2,3]], 
+        "Caug":  [[1,0,0,3], [5,4,4,3]], 
+
+        // --- C# / Db Family ---
+        "C#":    [[1,1,1,4], [6,5,4,4]], "Db":    [[1,1,1,4], [6,5,4,4]],
+        "C#m":   [[1,4,4,4], [6,4,4,4]], "Dbm":   [[1,4,4,4], [6,4,4,4]],
+        "C#7":   [[1,1,1,2], [4,5,4,4]], "Db7":   [[1,1,1,2], [4,5,4,4]],
+        "C#m7":  [[1,1,0,2], [4,4,4,4]], "Dbm7":  [[1,1,0,2], [4,4,4,4]],
+        "C#maj7":[[1,1,1,3], [6,5,4,4]], "Dbmaj7":[[1,1,1,3], [6,5,4,4]],
+        "C#sus4":[[1,1,2,4]],            "Dbsus4":[[1,1,2,4]],
+        "C#dim7":[[0,1,0,1], [3,4,3,4]], "Dbdim7":[[0,1,0,1], [3,4,3,4]],
+
+        // --- D Family ---
+        "D":     [[2,2,2,0], [2,2,2,5], [7,6,5,5]],
+        "Dm":    [[2,2,1,0], [7,5,5,5]],
+        "D7":    [[2,2,2,3], [2,0,2,0], [5,6,5,5]],
+        "Dm7":   [[2,2,1,3], [5,5,5,5]],
+        "Dmaj7": [[2,2,2,4], [6,6,5,4]],
+        "D6":    [[2,2,2,2], [4,2,2,0]],
+        "Dm6":   [[2,2,1,2]],
+        "D9":    [[2,4,2,3]],
+        "Dadd9": [[2,2,0,2], [0,4,2,0]],
+        "Dsus4": [[0,2,3,0], [2,2,3,0]],
+        "Dsus2": [[2,2,0,0]],
+        "Ddim7": [[1,2,1,2]],
+        "Daug":  [[3,2,2,1]],
+
+        // --- D# / Eb Family ---
+        "D#":    [[0,3,3,1], [3,3,3,6]], "Eb":    [[0,3,3,1], [3,3,3,6]],
+        "D#m":   [[3,3,2,1], [6,6,6,9]], "Ebm":   [[3,3,2,1], [6,6,6,9]],
+        "D#7":   [[3,3,3,4], [0,1,3,1]], "Eb7":   [[3,3,3,4], [0,1,3,1]],
+        "D#m7":  [[3,3,2,4], [1,1,2,1]], "Ebm7":  [[3,3,2,4], [1,1,2,1]],
+        "D#maj7":[[3,3,3,5], [0,2,3,1]], "Ebmaj7":[[3,3,3,5], [0,2,3,1]],
+        "D#dim7":[[2,3,2,3]],            "Ebdim7":[[2,3,2,3]],
+
+        // --- E Family ---
+        "E":     [[4,4,4,2], [1,4,0,2], [4,4,4,7]], // [4442] is standard closed, [1402] is open but needs finger curl
+        "Em":    [[0,4,3,2], [4,4,3,2], [9,7,7,7]],
+        "E7":    [[1,2,0,2], [4,4,4,5], [7,8,7,7]],
+        "Em7":   [[0,2,0,2], [0,4,3,5]],
+        "Emaj7": [[1,3,0,2], [4,4,4,6]],
+        "E6":    [[1,1,0,2], [4,4,4,4]],
+        "Em6":   [[0,1,0,2], [4,4,3,4]],
+        "E9":    [[1,2,2,2]],
+        "Esus4": [[2,4,0,2], [4,4,5,2]],
+        "Edim7": [[0,1,0,1], [3,4,3,4]],
+        "Eaug":  [[1,0,0,3], [5,4,4,3]], // Same as Caug
+
+        // --- F Family ---
+        "F":     [[2,0,1,0], [2,0,1,3], [5,5,5,8]],
+        "Fm":    [[1,0,1,3], [5,5,4,3]],
+        "F7":    [[2,3,1,3], [5,5,5,6]],
+        "Fm7":   [[1,3,1,3], [5,5,4,6]],
+        "Fmaj7": [[2,4,1,0], [5,5,0,0]], // [2410] is easier than [5500]
+        "F6":    [[2,2,1,0], [5,5,5,5]],
+        "Fm6":   [[1,2,1,3]],
+        "F9":    [[2,3,3,3]],
+        "Fadd9": [[0,0,1,0], [2,0,1,3]],
+        "Fsus4": [[2,0,1,1], [3,0,1,1]],
+        "Fdim7": [[1,2,1,2]], 
+        "Faug":  [[2,1,1,0]],
+
+        // --- F# / Gb Family ---
+        "F#":    [[3,1,2,1], [6,6,6,9]], "Gb":    [[3,1,2,1], [6,6,6,9]],
+        "F#m":   [[2,1,2,0], [6,6,5,4]], "Gbm":   [[2,1,2,0], [6,6,5,4]],
+        "F#7":   [[3,4,2,4], [6,6,6,7]], "Gb7":   [[3,4,2,4], [6,6,6,7]],
+        "F#m7":  [[2,4,2,4], [2,1,2,0]], "Gbm7":  [[2,4,2,4], [2,1,2,0]],
+        "F#maj7":[[3,5,2,1], [6,6,6,8]], "Gbmaj7":[[3,5,2,1], [6,6,6,8]],
+        "F#dim7":[[2,3,2,3]],            "Gbdim7":[[2,3,2,3]],
+
+        // --- G Family ---
+        "G":     [[0,2,3,2], [4,2,3,2], [7,7,7,10]],
+        "Gm":    [[0,2,3,1], [3,2,3,1], [7,7,6,5]],
+        "G7":    [[0,2,1,2], [0,2,1,0], [4,5,3,5]],
+        "Gm7":   [[0,2,1,1], [3,5,3,5]],
+        "Gmaj7": [[0,2,2,2], [4,6,2,4]],
+        "G6":    [[0,2,0,2], [0,4,3,5]],
+        "Gm6":   [[0,2,0,1]],
+        "G9":    [[2,2,1,2]],
+        "Gadd9": [[0,2,3,0], [2,2,3,2]],
+        "Gsus4": [[0,2,3,3]],
+        "Gdim7": [[0,1,0,1], [3,4,3,4]],
+        "Gaug":  [[0,3,3,2]],
+
+        // --- G# / Ab Family ---
+        "G#":    [[5,3,4,3], [1,3,4,3]], "Ab":    [[5,3,4,3], [1,3,4,3]],
+        "G#m":   [[4,3,4,2]],            "Abm":   [[4,3,4,2]],
+        "G#7":   [[1,3,2,3]],            "Ab7":   [[1,3,2,3]],
+        "G#m7":  [[1,3,2,2]],            "Abm7":  [[1,3,2,2]],
+        "G#maj7":[[1,3,3,3]],            "Abmaj7":[[1,3,3,3]],
+        "G#dim7":[[1,2,1,2]],            "Abdim7":[[1,2,1,2]],
+
+        // --- A Family ---
+        "A":     [[2,1,0,0], [2,1,0,4], [6,4,5,4]],
+        "Am":    [[2,0,0,0], [2,0,0,3], [5,4,5,3]],
+        "A7":    [[0,1,0,0], [2,1,3,0], [0,4,3,4]],
+        "Am7":   [[0,0,0,0], [2,0,3,0]],
+        "Amaj7": [[1,1,0,0], [2,1,0,0]],
+        "A6":    [[2,4,2,4], [2,1,2,0]],
+        "Am6":   [[2,4,2,3], [2,0,2,0]],
+        "A9":    [[2,1,0,2]],
+        "Aadd9": [[2,1,0,2], [4,1,0,0]],
+        "Asus4": [[2,2,0,0]],
+        "Adim7": [[2,3,2,3]], // Same as Cdim7
+        "Aaug":  [[2,1,1,0]], // Same as Faug
+
+        // --- A# / Bb Family ---
+        "A#":    [[3,2,1,1], [7,5,6,5]], "Bb":    [[3,2,1,1], [7,5,6,5]],
+        "A#m":   [[3,1,1,1], [6,5,6,4]], "Bbm":   [[3,1,1,1], [6,5,6,4]],
+        "A#7":   [[1,2,1,1], [3,2,4,1]], "Bb7":   [[1,2,1,1], [3,2,4,1]],
+        "A#m7":  [[1,1,1,1], [3,5,4,4]], "Bbm7":  [[1,1,1,1], [3,5,4,4]],
+        "A#maj7":[[3,2,1,0], [3,2,1,5]], "Bbmaj7":[[3,2,1,0], [3,2,1,5]],
+        "A#dim7":[[0,1,0,1]],            "Bbdim7":[[0,1,0,1]],
+
+        // --- B Family ---
+        "B":     [[4,3,2,2], [4,3,2,6], [8,6,7,6]],
+        "Bm":    [[4,2,2,2], [7,6,7,5]],
+        "B7":    [[2,3,2,2], [4,3,5,2]],
+        "Bm7":   [[2,2,2,2], [4,6,5,5]],
+        "Bmaj7": [[3,3,2,2], [4,3,2,1]],
+        "B6":    [[1,3,2,2]],
+        "B9":    [[2,3,2,4]],
+        "Bsus4": [[4,4,2,2]],
+        "Bdim7": [[1,2,1,2]], // Same as Ddim7
+        "Baug":  [[0,3,3,2]]  // Same as Gaug
+    };
+
+    const scales = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const scalesFlat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+    
+    // --- 狀態管理 ---
+var state = {
+    rawText: "",
+    currentTranspose: 0,
+    meta: { title: "如果有一天", artist: "梁靜茹", key: "F" },
+    chordVars: {}, 
+    scroll: { active: false, speed: 3, timer: null },
+    useFlats: true // <--- 新增這個：預設為 true (使用降記號 b)
+};
+    // --- 核心邏輯 ---
+    function isChordLine(line) {
+        return true; 
+    }
+
+    function getTransposedChord(chord, semi) {
+        if(chord.includes('/')) {
+            var parts = chord.split('/');
+            return getTransposedChord(parts[0], semi) + '/' + getTransposedChord(parts[1], semi);
+        }
+        var m = chord.match(/^([A-G][#b]?)(.*)/);
+        if(!m) return chord;
+        
+        var root = m[1];
+        var suffix = m[2];
+        
+        var idx = scales.indexOf(root);
+        if(idx === -1) idx = scalesFlat.indexOf(root);
+        if(idx === -1) return chord;
+        
+        var newIdx = (idx + semi) % 12;
+        if(newIdx < 0) newIdx += 12;
+        
+        // ▼▼▼ 修改邏輯：改為由 state.useFlats 決定 ▼▼▼
+        // 如果勾選了 useFlats，就強制查表 scalesFlat；否則查 scales
+        var newRoot = state.useFlats ? scalesFlat[newIdx] : scales[newIdx];
+        
+        return newRoot + suffix;
+    }
+
+    function getEnharmonicRoot(root) {
+        if (chordDatabase[root]) return root;
+        var aliasMap = {
+            "C#": "Db", "Db": "C#", "D#": "Eb", "Eb": "D#",
+            "F#": "Gb", "Gb": "F#", "G#": "Ab", "Ab": "G#",
+            "A#": "Bb", "Bb": "A#"
+        };
+        return aliasMap[root] || root;
+    }
+
+    function render() {
+        var view = document.getElementById('tab-view');
+        var gallery = document.getElementById('chord-gallery');
+        var usedChords = new Set();
+        
+        var lines = state.rawText.split('\n');
+        var html = "";
+
+        lines.forEach(function(line) {
+            var newLine = line.replace(/\b[A-G][#b]?(?:m|maj|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*(?:\/[A-G][#b]?)?\b/g, function(match) {
+                var newC = getTransposedChord(match, state.currentTranspose);
+                usedChords.add(newC.split('/')[0]);
+                return `<span class="chord" onclick="app.highlightGallery('${newC.split('/')[0]}')">${newC}</span>`;
+            });
+            html += newLine + "\n";
+        });
+
+        view.innerHTML = html;
+        
+        var m = state.rawText.match(/Key:\s*([A-G][#b]?)/i);
+        var currentKey = m ? getTransposedChord(m[1], state.currentTranspose) : getTransposedChord("F", state.currentTranspose);
+        document.getElementById('disp-key').innerText = currentKey;
+
+        gallery.innerHTML = "";
+        var sortedChords = Array.from(usedChords).sort();
+        sortedChords.forEach(function(c) {
+            var root = c.match(/^([A-G][#b]?)/)[0];
+            var lookupRoot = getEnharmonicRoot(root);
+            var shapes = chordDatabase[c] || chordDatabase[getEnharmonicRoot(c)];
+            if (!shapes) {
+                var simple = c.match(/^([A-G][#b]?m?)/)[0];
+                shapes = chordDatabase[simple] || chordDatabase[getEnharmonicRoot(simple)];
+            }
+            
+            if (shapes) {
+                var vIdx = state.chordVars[c] || 0;
+                if (vIdx >= shapes.length) vIdx = 0;
+                
+                var card = document.createElement('div');
+                card.className = 'chord-card';
+                card.id = 'card-'+c;
+                
+                var svg = drawSVG(shapes[vIdx]);
+                
+                card.innerHTML = `
+                    <div class="card-name">${c}</div>
+                    ${svg}
+                    <div class="card-nav">
+                        <span onclick="app.changeVar('${c}', -1)">◀</span>
+                        <span>${vIdx+1}/${shapes.length}</span>
+                        <span onclick="app.changeVar('${c}', 1)">▶</span>
+                    </div>
+                `;
+                gallery.appendChild(card);
+            }
+        });
+    }
+
+function drawSVG(fingering) {
+        // 1. 計算該和弦用到的最高與最低把位 (忽略空弦 0 和 悶音 -1)
+        var maxFret = 0;
+        var minFret = 99;
+        var hasFingers = false;
+        
+        for(var f of fingering) {
+            if(f > 0) {
+                if(f > maxFret) maxFret = f;
+                if(f < minFret) minFret = f;
+                hasFingers = true;
+            }
+        }
+        
+        // 如果全是空弦，預設顯示 1-4 格
+        if(!hasFingers) { maxFret = 0; minFret = 0; }
+
+        // 2. 決定起始把位 (Offset)
+        // 規則：如果最高按到第4格以內，就從第1格開始畫 (標準)
+        // 如果超過第4格，起始把位就設為該和弦的最低把位
+        var offset = 1;
+        if(maxFret > 4) {
+            offset = minFret;
+        }
+
+        // 3. 參數設定
+        var w=80, h=110, ml=12, mt=15; // ml稍微加大以容納側邊數字
+        var ss=14, fs=14;
+        
+        // 決定要畫幾格：通常畫 4 格就夠，但如果跨度大(例如 5-9)，就自動加長
+        // 至少畫 4 格
+        var numFrets = (maxFret - offset + 1); 
+        if (numFrets < 4) numFrets = 4;
+        
+        // 動態調整高度
+        h = mt + numFrets * fs + 10;
+
+        var s = `<svg class="uke-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+        
+        // --- 畫結構 ---
+        
+        // 頂線 (如果是第1把位，畫粗線 Nut；如果是高把位，畫細線 Fret)
+        if(offset === 1) {
+            s += `<line x1="${ml}" y1="${mt}" x2="${ml+ss*3}" y2="${mt}" class="uke-nut"/>`;
+        } else {
+            s += `<line x1="${ml}" y1="${mt}" x2="${ml+ss*3}" y2="${mt}" class="uke-fret"/>`;
+            // 高把位提示數字 (例如 "5")
+            s += `<text x="${ml + ss*3 + 4}" y="${mt + 6}" style="font-size:11px;fill:#555;font-weight:bold;font-family:Arial">${offset}</text>`;
+        }
+
+        // 畫其他格線 (橫線)
+        for(var i=1; i<=numFrets; i++) {
+            var y = mt + i*fs;
+            s += `<line x1="${ml}" y1="${y}" x2="${ml+ss*3}" y2="${y}" class="uke-fret"/>`;
+        }
+        
+        // 畫弦 (直線)
+        for(var i=0;i<4;i++) {
+             s += `<line x1="${ml+i*ss}" y1="${mt}" x2="${ml+i*ss}" y2="${mt + numFrets*fs}" class="uke-string"/>`;
+        }
+
+        // --- 畫點 ---
+        for(var str=0; str<4; str++) {
+            var fret = fingering[str];
+            var x = ml + str*ss;
+            
+            if(fret > 0) {
+                // 計算相對位置：
+                // 如果 offset=5, 按第5格 -> 畫在第1格的位置 (index 0)
+                // Y座標 = mt + (格數 * 格距) - 半格
+                var relFret = fret - offset + 1;
+                var y = mt + relFret*fs - fs/2;
+                
+                s += `<circle cx="${x}" cy="${y}" r="5" class="uke-dot"/>`;
+            } else if (fret === 0) {
+                // 空弦永遠畫在頂部上方
+                s += `<circle cx="${x}" cy="${mt-5}" r="3" class="uke-open"/>`;
+            } else {
+                // 悶音 x
+                s += `<text x="${x-3}" y="${mt-3}" style="font-size:10px;fill:#555">x</text>`;
+            }
+        }
+        s += `</svg>`;
+        return s;
+    }
+
+    // --- Public Methods ---
+    return {
+        init: function(data) {
+            if(data) { 
+                state = data;
+                document.getElementById('source-input').value = state.rawText;
+                document.getElementById('input-title').value = state.meta.title;
+                document.getElementById('input-artist').value = state.meta.artist;
+            } else {
+                var def = document.getElementById('source-input').value;
+                state.rawText = def;
+            }
+        /* ▼▼▼ 新增這一段：自動從內文解析 Title 與 Artist ▼▼▼ */
+            var matchTitle = state.rawText.match(/Title:\s*(.+)/i);
+            var matchArtist = state.rawText.match(/Artist:\s*(.+)/i);
+            var matchKey = state.rawText.match(/Key:\s*([A-G][#b]?)/i); // 順便連 Key 也一起修正
+
+            if (matchTitle && matchTitle[1]) {
+                state.meta.title = matchTitle[1].trim();
+                // 同步更新編輯框內容
+                document.getElementById('input-title').value = state.meta.title;
+            }
+            if (matchArtist && matchArtist[1]) {
+                state.meta.artist = matchArtist[1].trim();
+                document.getElementById('input-artist').value = state.meta.artist;
+            }
+            if (matchKey && matchKey[1]) {
+                state.meta.key = matchKey[1].trim();
+            }
+            /* ▲▲▲ 新增結束 ▲▲▲ */   
+    /* 解析 Key 之後，增加自動判斷邏輯 */
+        if (matchKey && matchKey[1]) {
+            state.meta.key = matchKey[1].trim();
+            
+            // ▼▼▼ 新增：如果是降記號屬性的 Key，自動開啟 Use Flats ▼▼▼
+            var flatKeys = ["F", "Bb", "Eb", "Ab", "Db", "Gb", "Dm", "Gm", "Cm", "Fm", "Bbm", "Ebm"];
+            if (flatKeys.includes(state.meta.key) || state.meta.key.includes("b")) {
+                state.useFlats = true;
+            } else {
+                state.useFlats = false;
+            }
+            // 同步 UI Checkbox 狀態
+            var chk = document.getElementById('chk-flats');
+            if(chk) chk.checked = state.useFlats;
+        }
+
+            this.updateInfo();
+            render();
+        },
+        updateInfo: function() {
+            document.getElementById('disp-title').innerText = state.meta.title;
+            document.getElementById('disp-artist').innerText = "演唱：" + state.meta.artist;
+        },
+        toggleEdit: function() {
+            var el = document.getElementById('editor-layer');
+            el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        },
+        saveEdit: function() {
+            state.meta.title = document.getElementById('input-title').value;
+            state.meta.artist = document.getElementById('input-artist').value;
+            state.rawText = document.getElementById('source-input').value;
+            state.currentTranspose = 0;
+            document.getElementById('trans-val').innerText = 0;
+            this.updateInfo();
+            this.toggleEdit();
+            render();
+        },
+        transpose: function(n) {
+            state.currentTranspose += n;
+            document.getElementById('trans-val').innerText = state.currentTranspose;
+            render();
+        },
+        resetTranspose: function() {
+            state.currentTranspose = 0;
+            document.getElementById('trans-val').innerText = 0;
+            render();
+        },
+        changeVar: function(chord, dir) {
+            if(!state.chordVars[chord]) state.chordVars[chord] = 0;
+            state.chordVars[chord] += dir;
+            render();
+        },
+        highlightGallery: function(chord) {
+            var el = document.getElementById('card-' + chord);
+            if(el) {
+                el.scrollIntoView({behavior:"smooth", block:"center"});
+                el.classList.add('highlight');
+                setTimeout(function(){ el.classList.remove('highlight'); }, 1000);
+            }
+        },
+     // ▼▼▼ 新增這個函式 ▼▼▼
+        setFlats: function(checked) {
+            state.useFlats = checked;
+            render(); // 重畫頁面
+        },       
+ // TXT 下載
+        downloadTxt: function() {
+            var content = document.getElementById('tab-view').innerText;
+            var header = "Title: " + state.meta.title + "\nArtist: " + state.meta.artist + "\n\n";
+            var blob = new Blob([header + content], {type: "text/plain"});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            
+            // ▼▼▼ 修改了這裡：曲名_演唱者.txt ▼▼▼
+            a.download = state.meta.title + "_" + state.meta.artist + ".txt";
+            
+            a.click();
+        },
+                // --- 修正後的匯出功能 ---
+        exportHtml: function() {
+            var html = document.documentElement.outerHTML;
+            
+            // 1. 清理編輯器顯示狀態
+            html = html.replace('style="display: block;" id="editor-layer"', 'style="display: none;" id="editor-layer"');
+            
+            // 2. 準備要注入的新腳本
+            // 注意：<\/script> 的寫法是為了避免在編輯時就截斷字串
+            var script = `<script>window.onload=function(){ app.init(${JSON.stringify(state)}); }<\/script>`;
+            
+            // 3. 移除舊的 init 呼叫
+            html = html.replace('window.onload = function() { app.init(); };', '');
+            
+            // 4. 【關鍵修正】只替換「最後一個」</body> 標籤
+            // 原本的 replace('</body>') 會誤抓到這裡這行程式碼裡的字串，導致檔案損毀
+            var closeBody = '</body>';
+            var lastIndex = html.lastIndexOf(closeBody);
+            if (lastIndex !== -1) {
+                 html = html.substring(0, lastIndex) + script + closeBody + html.substring(lastIndex + closeBody.length);
+            }
+
+            var blob = new Blob([html], {type: "text/html"});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = state.meta.title + "_" + state.meta.artist + ".txt";
+            a.click();
+        },
+        // --- 修正後的捲動功能 ---
+        toggleScroll: function() {
+            state.scroll.active = !state.scroll.active;
+            // 【修正】這裡原本寫 'scroll-btn' 但 HTML ID 是 'scroll-toggle'
+            var btn = document.getElementById('scroll-toggle'); 
+            if(state.scroll.active) {
+                btn.innerText = "⏸";
+                this.startScroll();
+            } else {
+                btn.innerText = "▶";
+                clearInterval(state.scroll.timer);
+            }
+        },
+        startScroll: function() {
+            if(state.scroll.timer) clearInterval(state.scroll.timer);
+            var ms = 50 - (state.scroll.speed * 2); if(ms<5) ms=5;
+            state.scroll.timer = setInterval(function() {
+                window.scrollBy(0, 1);
+                if((window.innerHeight + window.scrollY) >= document.body.offsetHeight) app.toggleScroll();
+            }, ms);
+        },
+        setSpeed: function(v) {
+            state.scroll.speed = parseInt(v);
+            if(state.scroll.active) this.startScroll();
+        }
+    };
+})();
+
+// --- 取代原本的 window.onload ---
+window.onload = function() {
+    // 1. 抓取網址參數
+    const params = new URLSearchParams(window.location.search);
+    const txtName = params.get('txtfile'); // 取得 ?txtfile=後面的字串
+
+    if (txtName) {
+        // 2. 如果有參數，解析檔名 (格式：曲名_演唱者)
+        // 這裡假設您網址傳入 "如果有一天_梁靜茹"，但檔案實際是 "如果有一天_梁靜茹.txt"
+        // 如果檔名裡沒有底線，歌手會變空字串，不影響程式運作
+        const parts = txtName.split('_');
+        const title = parts[0];
+        const artist = parts[1] || ""; 
+
+        // 3. 先把標題跟歌手填入欄位
+        document.getElementById('input-title').value = title;
+        document.getElementById('input-artist').value = artist;
+
+        // 4. 動態讀取同目錄下的 .txt 檔案
+        fetch(txtName + '.txt')
+            .then(response => {
+                if (!response.ok) throw new Error("找不到檔案");
+                return response.text();
+            })
+            .then(text => {
+                // 5. 讀取成功：填入內容並初始化
+                document.getElementById('source-input').value = text;
+                app.init(); 
+            })
+            .catch(error => {
+                alert("無法讀取樂譜檔案：" + txtName + ".txt\n請確認檔案名稱正確且位於同一目錄下。");
+                // 讀取失敗還是要初始化(顯示預設內容)
+                app.init();
+            });
+    } else {
+        // 6. 如果網址沒參數，就照舊直接啟動 (顯示預設內容)
+        app.init();
+    }
+};
+</script>
+
+</body>
+</html>

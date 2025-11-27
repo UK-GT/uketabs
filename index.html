@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烏克麗麗 樂譜資料庫</title>
+    <script src="list.js"></script> 
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f4f6f7; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        h1 { text-align: center; color: #e67e22; margin-bottom: 20px; margin-top: 10px; }
+        
+        /* 搜尋與過濾 */
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .tab-group { display: flex; gap: 10px; }
+        .tab-btn { padding: 8px 20px; border: none; background: #eee; color: #666; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.2s; font-family: "Microsoft JhengHei"; font-size: 15px; }
+        .tab-btn.active { background: #3498db; color: white; }
+        .tab-btn:hover:not(.active) { background: #ddd; }
+        
+        .search-box { padding: 8px 15px; border: 1px solid #ccc; border-radius: 20px; width: 200px; font-size: 14px; outline: none; }
+        .search-box:focus { border-color: #3498db; }
+
+        /* 列表顯示 */
+        #content-area { min-height: 200px; }
+        .category-block { margin-bottom: 30px; animation: fadeIn 0.5s; }
+        .category-title { font-size: 20px; color: #2c3e50; border-left: 5px solid #e67e22; padding-left: 10px; margin-bottom: 15px; font-weight: bold; background: #fff8f0; padding: 8px 10px; border-radius: 0 5px 5px 0; }
+        
+        .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .song-card { background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px; text-decoration: none; color: #333; transition: 0.2s; position: relative; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .song-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #e67e22; }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
+        .card-artist { font-size: 13px; color: #7f8c8d; }
+        .tag { position: absolute; top: 10px; right: 10px; font-size: 12px; background: #ecf0f1; color: #7f8c8d; padding: 2px 6px; border-radius: 4px; }
+
+        .empty-state { text-align: center; color: #aaa; margin-top: 50px; font-size: 16px; }
+        .error-msg { text-align: center; color: #e74c3c; padding: 20px; background: #fadbd8; border-radius: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 600px) { .filter-bar { flex-direction: column; align-items: stretch; } .search-box { width: 100%; box-sizing: border-box; } .song-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎸 烏克麗麗 樂譜資料庫</h1>
+    
+    <div class="filter-bar" id="filter-bar">
+        <div class="tab-group">
+            <button class="tab-btn active" onclick="app.switchTab('count')">依字數</button>
+            <button class="tab-btn" onclick="app.switchTab('artist')">依歌手</button>
+        </div>
+        <input type="text" class="search-box" placeholder="🔍 搜尋歌名或歌手..." oninput="app.search(this.value)">
+    </div>
+
+    <div id="content-area"></div>
+</div>
+
+<script>
+    const app = (function() {
+        let allFiles = []; 
+        let currentMode = 'count';
+        let searchTerm = '';
+        const contentArea = document.getElementById('content-area');
+
+        function init() {
+            // 檢查 list.js 是否成功載入
+            if (typeof songList === 'undefined') {
+                contentArea.innerHTML = `
+                    <div class="error-msg">
+                        ⚠️ <b>無法讀取樂譜清單 (list.js)</b><br><br>
+                        請確認您已將 list.js 上傳至同一目錄。<br>
+                        <small>您可以使用「產生清單小幫手」來建立此檔案。</small>
+                    </div>`;
+                return;
+            }
+            processData(songList);
+        }
+
+function processData(list) {
+            allFiles = list.map(fileName => {
+                // 解析檔名邏輯 (預設格式: 曲名_歌手.html)
+                // 自動解碼 URL (例如 %20 -> 空白)
+                const decodedName = decodeURIComponent(fileName);
+                // 去除 .html 副檔名
+                const rawName = decodedName.replace('.txt', '');
+                let title, artist;
+
+                if (rawName.includes('_')) {
+                    const parts = rawName.split('_');
+                    title = parts[0];
+                    artist = parts[1];
+                } else {
+                    title = rawName;
+                    artist = "未知歌手";
+                }
+
+                return {
+                    title: title,
+                    artist: artist,
+                    fileName: fileName, 
+                    rawName: rawName,   // [新增] 儲存不含副檔名的名稱
+                    wordCount: title.length
+                };
+            });
+            render();
+        }
+        
+        function switchTab(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            render();
+        }
+
+        function search(keyword) {
+            searchTerm = keyword.toLowerCase();
+            render();
+        }
+
+function render() {
+            contentArea.innerHTML = '';
+            
+            const filtered = allFiles.filter(f => 
+                f.title.toLowerCase().includes(searchTerm) || 
+                f.artist.toLowerCase().includes(searchTerm)
+            );
+
+            if (filtered.length === 0) {
+                contentArea.innerHTML = '<div class="empty-state">沒有符合搜尋條件的歌曲。</div>';
+                return;
+            }
+
+            const groups = {};
+            
+            if (currentMode === 'count') {
+                filtered.forEach(item => {
+                    const key = item.wordCount + ' 字部';
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+                var sortedKeys = Object.keys(groups).sort((a,b) => parseInt(a) - parseInt(b));
+            } else {
+                filtered.forEach(item => {
+                    const key = item.artist || '其他';
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+                var sortedKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b, "zh-Hant"));
+            }
+
+            sortedKeys.forEach(key => {
+                const section = document.createElement('div');
+                section.className = 'category-block';
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'category-title';
+                titleDiv.innerHTML = `${key} <span style="font-size:0.8em; color:#999; font-weight:normal;">(${groups[key].length})</span>`;
+                section.appendChild(titleDiv);
+
+                const grid = document.createElement('div');
+                grid.className = 'song-grid';
+
+                groups[key].forEach(song => {
+                    const link = document.createElement('a');
+                    link.className = 'song-card';
+                    
+                    // [修改重點] 這裡更改了連結格式
+                    // 將原本的 song.fileName 改為 readtab.html?txtfile=檔名(不含html)
+                    link.href = `readtab.html?txtfile=${song.rawName}`; 
+                    
+                    link.target = "_blank"; 
+
+                    link.innerHTML = `
+                        <div class="card-title">${song.title}</div>
+                        <div class="card-artist">🎤 ${song.artist}</div>
+                        ${currentMode === 'artist' ? `<span class="tag">${song.wordCount}字</span>` : ''}
+                    `;
+                    grid.appendChild(link);
+                });
+
+                section.appendChild(grid);
+                contentArea.appendChild(section);
+            });
+        }
+
+        return { init, switchTab, search };
+    })();
+
+    window.onload = app.init;
+</script>
+
+</body>
+</html>
