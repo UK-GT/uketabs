@@ -34,7 +34,7 @@
         .header { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
         .song-title { font-size: 26px; font-weight: 800; margin: 0 0 5px 0; color: #333; }
         .song-artist { font-size: 16px; color: #555; }
-        .song-meta { font-size: 13px; color: #999; margin-top: 5px; font-family: var(--font-mono); }
+        .song-meta { font-size: 13px; color: #999; margin-top: 5px; font-family: var(--font-mono);display: none; }
 
         /* --- 3. 控制面板 --- */
         .controls {
@@ -410,7 +410,8 @@ var state = {
         var html = "";
 
         lines.forEach(function(line) {
-            var newLine = line.replace(/\b[A-G][#b]?(?:m|maj|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*(?:\/[A-G][#b]?)?\b/g, function(match) {
+            // 注意：在 m|maj 後面多加了 |M
+                var newLine = line.replace(/\b[A-G][#b]?(?:m|maj|M|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*(?:\/[A-G][#b]?)?\b/g, function(match) {
                 var newC = getTransposedChord(match, state.currentTranspose);
                 usedChords.add(newC.split('/')[0]);
                 return `<span class="chord" onclick="app.highlightGallery('${newC.split('/')[0]}')">${newC}</span>`;
@@ -427,10 +428,17 @@ var state = {
         gallery.innerHTML = "";
         var sortedChords = Array.from(usedChords).sort();
         sortedChords.forEach(function(c) {
+            // ▼▼▼ 新增：建立替代名稱，將大寫 M 轉為 maj (如 CM7 -> Cmaj7) ▼▼▼
+            var altName = c.replace('M', 'maj');
+
             var root = c.match(/^([A-G][#b]?)/)[0];
             var lookupRoot = getEnharmonicRoot(root);
-            var shapes = chordDatabase[c] || chordDatabase[getEnharmonicRoot(c)];
+            
+            // ▼▼▼ 修改：查詢順序加入 altName (優先查原名 -> 查maj轉換名 -> 查同音異名) ▼▼▼
+            var shapes = chordDatabase[c] || chordDatabase[altName] || chordDatabase[getEnharmonicRoot(c)];
+            
             if (!shapes) {
+                // 如果還是找不到，嘗試簡化版 (例如 Cmaj7 -> C)
                 var simple = c.match(/^([A-G][#b]?m?)/)[0];
                 shapes = chordDatabase[simple] || chordDatabase[getEnharmonicRoot(simple)];
             }
@@ -556,6 +564,9 @@ function drawSVG(fingering) {
             } else {
                 var def = document.getElementById('source-input').value;
                 state.rawText = def;
+// ▼▼▼ 新增這兩行：從輸入框讀取由檔名解析出的標題與歌手 ▼▼▼
+                state.meta.title = document.getElementById('input-title').value || "未命名";
+                state.meta.artist = document.getElementById('input-artist').value || "未知";                
             }
         /* ▼▼▼ 新增這一段：自動從內文解析 Title 與 Artist ▼▼▼ */
             var matchTitle = state.rawText.match(/Title:\s*(.+)/i);
