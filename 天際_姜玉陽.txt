@@ -1,13 +1,11 @@
-姜玉陽 — 天際
-
-
-Tuning: G C E A
-Capo: 4th fret
 
 
 Key=Dm
 
-
+Dm  Dm  Gm Gm
+    654   0 57bh1 5 17b 5
+ C  C           Dm Dm
+ 111 23 1 3h4 3 1
 
 |Dm    |Dm    |Gm  |Gm  |
 不知道為什麼 讓我遇見了你

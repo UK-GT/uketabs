@@ -1,15 +1,11 @@
-黃鶯鶯 — 哭砂
-
-
-Tuning: G C E A
-
 
 哭砂
 
 原Key=D
 
 
- F          Dm  |Bb           |C    |你是我最苦澀的等待　讓我歡喜又害怕未來
+ F          Dm  |Bb           |C    |
+你是我最苦澀的等待　讓我歡喜又害怕未來
 Bb         Am Dm     |Bb           |C  |
 你最愛說你是一顆塵埃　偶爾會惡作劇的飄進我眼裏
    |F       |Dm        Bb       C      F
@@ -35,5 +31,5 @@ Bb         Am Dm     |Bb           |C  |
 [間奏] |F   Dm  |Bb  |C   F  |Dm  |C  Bb  |F    (回▲)
 
 (2)
-|F     C    |Dm      C    Bb      F    |
+|F     C    |Dm      C    Bb  C   F    |
 風吹來的砂　冥冥在哭泣　難道早就預言了分離          (And)

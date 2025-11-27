@@ -1,0 +1,45 @@
+
+
+------------------- --------------------------------
+Key=Em
+
+
+4/4 67 BPM
+
+[Intro]
+ Em Cmaj7  D Bm7  C Am7  Em B  x2
+
+[Verse 1]
+ Em    C   D/F#    G  Em    C   D/F#   G
+  愛過的人 我已不再擁有   許多故事 有傷心的理由
+   Cmaj7  D/F#  Bm7    Em  Am7     D/F#   B
+這一次我的愛情 等不到天長地久 錯過的人 是否可以回首
+
+[Verse 2]
+ Em    C   D/F#    G  Em    C   D/F#   G
+  愛過的心 沒有任何請求   許多故事 有傷心的理由
+   Cmaj7  D/F#  Bm7    Em  Am7     D/F#  Em
+這一次我的愛情 等不到天長地久 走過的路 再也不能停留
+
+[Chorus]
+     G      D      Am7    Em
+一千個傷心的理由 一千個傷心的理由
+    G      Am7   C     D/F#
+最後我的愛情在故事裡慢慢陳舊
+     G      D/F#    Am7   Em
+一千個傷心的理由 一千個傷心的理由
+    G     Am     C D Em
+最後在別人的故事裡我被遺忘
+
+[Interlude]
+ Em Cmaj7  D Bm7  C Am7  Em B
+
+----- 回 Verse 2 -----
+
+[Bridge]
+ Em  Am  B7 Em  D G  D G  B  B
+
+----- 回 Chorus -----
+
+[Pre-Outro]
+ Em Cmaj7  D Bm7  C Am7  Baug
