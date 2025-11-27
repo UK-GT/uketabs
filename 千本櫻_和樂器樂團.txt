@@ -1,0 +1,33 @@
+和樂器樂團 — 千本櫻
+
+
+Tuning: G C E A
+
+
+Dm|Dm - C|Dm||Dm  F  G  A|
+[Intro]
+|Bb C |Dm - C|Bb C |Dm - C|Bb C |Dm - C|
+|Bb C |Dm - C Dm - |
+2次
+[Verse 1]
+|Dm |Bb - Bb C|Dm |Bb C| X2
+
+[Verse 2]
+|Bb   |F  |Bb  C  |Dm
+|Bb   |F  |Gm      |A  |
+
+|Dm Bb |C F |Dm Bb |C F |
+|Dm Bb |C F |Bb Am C Bb|Dm -  X2
+
+[Intro] 1次
+ goto [Verse1] [Verse2]
+
+[間奏]
+|Dm -- C|Dm -- C|Dm -- C|Dm  F  G  A| X2
+|Bb C |Dm F |Bb C |Dm | X2
+goto [Verse2]
+
+[outro]
+|Bb C |Dm - C|Bb C |Dm - C|Bb C |Dm - C|
+|Bb C |Dm - C Dm - |
+2次|Dm
